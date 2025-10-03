@@ -4,4 +4,6 @@ body,html {
   background: black;
   overflow: hidden;
 }
-canvas { display:block }
+canvas { 
+  display:block;
+}
