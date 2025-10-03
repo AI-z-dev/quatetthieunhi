@@ -2,160 +2,22 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Trái tim hạt</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: black;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-    }
-    #musicBtn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      color: white;
-      background: rgba(255, 100, 150, 0.6);
-      cursor: pointer;
-      z-index: 1000;
-      transition: all 0.3s ease;
-      user-select: none;
-    }
-    #musicBtn:hover {
-      background: rgba(255, 100, 150, 0.9);
-      transform: scale(1.1);
-    }
-    /* Nút xoay khi nhạc phát */
-    .spinning {
-      animation: spin 3s linear infinite;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-  </style>
+  <title>3D Heart Galaxy</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Thư viện Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
-
-  <!-- Nhạc nền -->
-  <audio id="bgm" loop>
+  <div id="container"></div>
+  <div id="message">Chúc bạn Trần Bình Trung Thu ấm áp nhaa &lt;3</div>
+  
+  <!-- Nút nhạc -->
+  <button id="music-btn">🎵</button>
+  <audio id="bg-music" loop>
     <source src="v14044g50000d1funuvog65k1rp5r8c0.mp3" type="audio/mpeg">
+  
   </audio>
-  <div id="musicBtn">🎵</div>
 
-  <script>
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-    let w = canvas.width = window.innerWidth;
-    let h = canvas.height = window.innerHeight;
-
-    // text
-    const text = "❤️ CHÚC MỪNG TRUNG THU ❤️";
-    ctx.font = "bold 120px Arial";
-    ctx.fillStyle = "white";
-    ctx.textAlign = "center";
-    ctx.fillText(text, w/2, h/2);
-
-    const textData = ctx.getImageData(0, 0, w, h).data;
-
-    // tạo hạt từ chữ + trái tim
-    const particles = [];
-    for (let y = 0; y < h; y += 6) {
-      for (let x = 0; x < w; x += 6) {
-        const index = (y * w + x) * 4;
-        if (textData[index+3] > 128) {
-          particles.push({
-            x: Math.random() * w,
-            y: h + Math.random() * 200,
-            targetX: x,
-            targetY: y,
-            vx: 0,
-            vy: 0
-          });
-        }
-      }
-    }
-
-    function drawHeart(x, y, size) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(size, size);
-      ctx.beginPath();
-      ctx.moveTo(0, -1);
-      ctx.bezierCurveTo(1, -1.5, 2, 0, 0, 2);
-      ctx.bezierCurveTo(-2, 0, -1, -1.5, 0, -1);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function animate() {
-      ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = "pink";
-      for (let p of particles) {
-        // lực hút xoáy vào target
-        let dx = p.targetX - p.x;
-        let dy = p.targetY - p.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        let angle = Math.atan2(dy, dx) + Math.sin(Date.now()/500) * 0.2;
-        let force = Math.min(0.05, dist/1000);
-
-        p.vx += Math.cos(angle) * force;
-        p.vy += Math.sin(angle) * force;
-        p.vx *= 0.9;
-        p.vy *= 0.9;
-        p.x += p.vx;
-        p.y += p.vy;
-
-        drawHeart(p.x, p.y, 3);
-      }
-      requestAnimationFrame(animate);
-    }
-    animate();
-
-    window.onresize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    };
-
-    // Music control
-    const bgm = document.getElementById("bgm");
-    const btn = document.getElementById("musicBtn");
-    let playing = false;
-
-    btn.addEventListener("click", () => {
-      if (!playing) {
-        bgm.play();
-        btn.textContent = "⏸";
-        btn.classList.add("spinning");
-      } else {
-        bgm.pause();
-        btn.textContent = "🎵";
-        btn.classList.remove("spinning");
-      }
-      playing = !playing;
-    });
-
-    // thử autoplay
-    bgm.play().then(() => {
-      btn.textContent = "⏸";
-      btn.classList.add("spinning");
-      playing = true;
-    }).catch(() => {
-      console.log("Autoplay bị chặn, chờ click...");
-    });
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
