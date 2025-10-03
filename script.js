@@ -1,91 +1,95 @@
-// setup scene
+// === Setup ===
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 2000);
-camera.position.z = 250;
+camera.position.set(0,0,400);
 
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.getElementById("container").appendChild(renderer.domElement);
 
-// controls (drag xoay camera)
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-// background stars
-const starGeo = new THREE.BufferGeometry();
-const starCount = 3000;
-const starPos = [];
-for(let i=0;i<starCount;i++){
-  starPos.push((Math.random()-0.5)*2000,
-               (Math.random()-0.5)*2000,
-               (Math.random()-0.5)*2000);
-}
-starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos,3));
-const starMat = new THREE.PointsMaterial({color:0xffffff, size:1});
-const stars = new THREE.Points(starGeo, starMat);
-scene.add(stars);
+// === Light ===
+const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambient);
+const pointLight = new THREE.PointLight(0xffffff, 1);
+pointLight.position.set(200,200,200);
+scene.add(pointLight);
 
-// heart shape (particles)
-const heartShape = new THREE.Shape();
-heartShape.moveTo(0,0);
-heartShape.bezierCurveTo(0,0,0,-3,3,-3);
-heartShape.bezierCurveTo(6,-3,6,0,6,0);
-heartShape.bezierCurveTo(6,3,3,5,0,8);
-heartShape.bezierCurveTo(-3,5,-6,3,-6,0);
-heartShape.bezierCurveTo(-6,0,-6,-3,-3,-3);
-heartShape.bezierCurveTo(0,-3,0,0,0,0);
+// === Heart Particles ===
+const particleCount = 4000;
+const particles = new THREE.BufferGeometry();
+const positions = new Float32Array(particleCount*3);
+const targets = [];
 
-const points = heartShape.getPoints(1000);
-const heartGeo = new THREE.BufferGeometry().setFromPoints(points.map(p=>new THREE.Vector3(p.x*10,p.y*10,0)));
-const heartMat = new THREE.PointsMaterial({color:0x55aaff, size:1.5});
-const heart = new THREE.Points(heartGeo, heartMat);
-scene.add(heart);
-
-// heartbeat effect
-let scaleDir = 1;
-function heartbeat(){
-  const s = heart.scale.x + scaleDir*0.002;
-  heart.scale.set(s,s,s);
-  if(s>1.05) scaleDir=-1;
-  if(s<0.95) scaleDir=1;
+function heartFormula(t){
+  const x = 16 * Math.pow(Math.sin(t),3);
+  const y = 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
+  return new THREE.Vector3(x*8, y*8, (Math.random()-0.5)*30);
 }
 
-// danh sách animation
-const animateFns = [heartbeat];
+// target positions (heart shape)
+for(let i=0;i<particleCount;i++){
+  const t = Math.random()*Math.PI*2;
+  const pt = heartFormula(t);
+  targets.push(pt);
 
-// Text "Trung Thu ấm áp"
+  // start random dưới + loạn
+  positions[i*3] = (Math.random()-0.5)*400;
+  positions[i*3+1] = -500 - Math.random()*500;
+  positions[i*3+2] = (Math.random()-0.5)*400;
+}
+
+particles.setAttribute('position', new THREE.BufferAttribute(positions,3));
+const mat = new THREE.PointsMaterial({color:0xff6699, size:2});
+const pointCloud = new THREE.Points(particles, mat);
+scene.add(pointCloud);
+
+// === Text (1 dòng) ===
 const loader = new THREE.FontLoader();
-loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', font=>{
-  const textGeo = new THREE.TextGeometry('Chúc bạn Bình Trung Thu ấm áp', {
+let textMesh;
+loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', font=>{
+  const geo = new THREE.TextGeometry('Chuc ban Tran Binh Trung Thu am ap nhaa<3', {
     font: font,
-    size: 15,
-    height: 2,
-    curveSegments: 12,
+    size: 20,
+    height: 5,
+    bevelEnabled: true,
+    bevelThickness: 1,
+    bevelSize: 1,
+    bevelSegments: 3
   });
-  const textMat = new THREE.MeshBasicMaterial({color:0xff6699});
-  const text = new THREE.Mesh(textGeo, textMat);
-  text.position.set(-60, -100, 0);
-  scene.add(text);
-
-  // orbit animation cho chữ
-  const radius = 120;
-  function animateText(t){
-    text.position.x = Math.cos(t*0.001)*radius;
-    text.position.z = Math.sin(t*0.001)*radius;
-  }
-  animateFns.push(animateText);
+  geo.center();
+  const mat = new THREE.MeshPhongMaterial({color:0xffff66, shininess:150});
+  textMesh = new THREE.Mesh(geo, mat);
+  textMesh.position.set(0, -150, 0);
+  scene.add(textMesh);
 });
 
-// loop
-function animate(t){
+// === Animation ===
+function animate(){
   requestAnimationFrame(animate);
-  stars.rotation.y += 0.0002;
-  heart.rotation.y += 0.001;
-  animateFns.forEach(fn=>fn(t));
+
+  // update particles
+  const pos = particles.attributes.position.array;
+  for(let i=0;i<particleCount;i++){
+    const target = targets[i];
+    pos[i*3] += (target.x - pos[i*3])*0.02;
+    pos[i*3+1] += (target.y - pos[i*3+1])*0.02;
+    pos[i*3+2] += (target.z - pos[i*3+2])*0.02;
+  }
+  particles.attributes.position.needsUpdate = true;
+
+  // rotate text slowly
+  if(textMesh){
+    textMesh.rotation.y += 0.01;
+  }
+
+  pointCloud.rotation.y += 0.002;
   renderer.render(scene,camera);
 }
 animate();
 
-// responsive
+// === Resize ===
 addEventListener('resize',()=>{
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
