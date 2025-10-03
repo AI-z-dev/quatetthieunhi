@@ -1,51 +1,32 @@
-body {
+body, html {
   margin: 0;
-  overflow: hidden;
+  padding: 0;
+  height: 100%;
   background: black;
-  font-family: Arial, sans-serif;
+  overflow: hidden;
 }
 
 #container {
-  width: 100vw;
-  height: 100vh;
-}
-
-#message {
-  position: absolute;
-  bottom: 50px;
   width: 100%;
-  text-align: center;
-  font-size: 28px;
-  color: cyan;
-  text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
-  font-weight: bold;
-  animation: glow 2s infinite alternate;
+  height: 100%;
 }
 
-@keyframes glow {
-  from {
-    text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-  }
-  to {
-    text-shadow: 0 0 20px #00ffff, 0 0 50px #00ffff, 0 0 100px #00ffff;
-  }
+canvas {
+  display: block;
 }
 
-#music-btn {
+#musicBtn {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  font-size: 24px;
-  padding: 10px;
-  border: none;
-  border-radius: 50%;
+  top: 15px;
+  left: 15px;
+  padding: 8px 15px;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #00ccff;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
   cursor: pointer;
-  background: rgba(0, 0, 0, 0.5);
-  color: cyan;
-  box-shadow: 0 0 10px cyan;
-  transition: transform 0.2s;
 }
-
-#music-btn:hover {
-  transform: scale(1.2);
+#musicBtn:hover {
+  background: rgba(0,0,0,0.85);
 }
