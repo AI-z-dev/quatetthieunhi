@@ -1,97 +1,164 @@
-// === Setup ===
+// === Setup cơ bản ===
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 2000);
-camera.position.set(0,0,400);
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 3000);
+camera.position.set(0, 0, 520);
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
-document.getElementById("container").appendChild(renderer.domElement);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.getElementById('container').appendChild(renderer.domElement);
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
-// === Light ===
-const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambient);
-const pointLight = new THREE.PointLight(0xffffff, 1);
-pointLight.position.set(200,200,200);
-scene.add(pointLight);
+// === Ánh sáng ===
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const pl = new THREE.PointLight(0xffffff, 1.2);
+pl.position.set(300, 300, 300);
+scene.add(pl);
 
-// === Heart Particles ===
-const particleCount = 4000;
-const particles = new THREE.BufferGeometry();
-const positions = new Float32Array(particleCount*3);
-const targets = [];
-
-function heartFormula(t){
-  const x = 16 * Math.pow(Math.sin(t),3);
-  const y = 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
-  return new THREE.Vector3(x*8, y*8, (Math.random()-0.5)*30);
+// === Hàm trái tim (parametric) ===
+function heartFormula(t) {
+  // parametric heart (classic)
+  const x = 16 * Math.pow(Math.sin(t), 3);
+  const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+  return new THREE.Vector3(x * 8, y * 8, (Math.random() - 0.5) * 40);
 }
 
-// target positions (heart shape)
-for(let i=0;i<particleCount;i++){
-  const t = Math.random()*Math.PI*2;
+// === Particle setup (spiral -> target heart) ===
+const particleCount = 3000;
+const geometry = new THREE.BufferGeometry();
+const positions = new Float32Array(particleCount * 3);
+geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+const targets = new Float32Array(particleCount * 3);
+const startX = new Float32Array(particleCount);
+const startY = new Float32Array(particleCount);
+const startZ = new Float32Array(particleCount);
+const startAngle = new Float32Array(particleCount);
+const startRadius = new Float32Array(particleCount);
+const progress = new Float32Array(particleCount);
+const speed = new Float32Array(particleCount);
+
+for (let i = 0; i < particleCount; i++) {
+  // target on heart
+  const t = Math.random() * Math.PI * 2;
   const pt = heartFormula(t);
-  targets.push(pt);
+  targets[i * 3] = pt.x;
+  targets[i * 3 + 1] = pt.y;
+  targets[i * 3 + 2] = pt.z;
 
-  // start random dưới + loạn
-  positions[i*3] = (Math.random()-0.5)*400;
-  positions[i*3+1] = -500 - Math.random()*500;
-  positions[i*3+2] = (Math.random()-0.5)*400;
+  // start somewhere dưới, theo vòng xoáy (để tạo spiral)
+  startAngle[i] = Math.random() * Math.PI * 8;
+  startRadius[i] = 80 + Math.random() * 300;
+  startX[i] = startRadius[i] * Math.cos(startAngle[i]) + (Math.random() - 0.5) * 30;
+  startY[i] = -600 - Math.random() * 300;
+  startZ[i] = startRadius[i] * Math.sin(startAngle[i]) + (Math.random() - 0.5) * 30;
+
+  // init positions = start
+  positions[i * 3] = startX[i];
+  positions[i * 3 + 1] = startY[i];
+  positions[i * 3 + 2] = startZ[i];
+
+  // progress and speed (stagger)
+  progress[i] = -Math.random() * 1.5; // start negative -> delayed entrance
+  speed[i] = 0.003 + Math.random() * 0.008;
 }
 
-particles.setAttribute('position', new THREE.BufferAttribute(positions,3));
-const mat = new THREE.PointsMaterial({color:0xff6699, size:2});
-const pointCloud = new THREE.Points(particles, mat);
-scene.add(pointCloud);
+const material = new THREE.PointsMaterial({
+  size: 2.2,
+  sizeAttenuation: true,
+  color: 0xff66b3,
+  transparent: true,
+  opacity: 0.95
+});
+const particles = new THREE.Points(geometry, material);
+scene.add(particles);
 
-// === Text (1 dòng) ===
+// === Text (1 dòng, dày, centered) ===
+let textMesh = null;
 const loader = new THREE.FontLoader();
-let textMesh;
-loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', font=>{
-  const geo = new THREE.TextGeometry('Chuc ban Tran Binh Trung Thu am ap nhaa<3', {
+loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+  const txt = 'Chuc ban Tran Binh Trung Thu am ap nhaa<3'; // không dấu để chắc chắn hiển thị
+  const geo = new THREE.TextGeometry(txt, {
     font: font,
-    size: 20,
-    height: 5,
+    size: 36,
+    height: 8,
+    curveSegments: 8,
     bevelEnabled: true,
-    bevelThickness: 1,
-    bevelSize: 1,
+    bevelThickness: 1.2,
+    bevelSize: 1.0,
     bevelSegments: 3
   });
-  geo.center();
-  const mat = new THREE.MeshPhongMaterial({color:0xffff66, shininess:150});
+  geo.computeBoundingBox();
+  const bb = geo.boundingBox;
+  const xOffset = (bb.max.x + bb.min.x) / 2;
+  const yOffset = (bb.max.y + bb.min.y) / 2;
+  geo.translate(-xOffset, -yOffset - 220, 0); // đặt thấp hơn tim
+
+  const mat = new THREE.MeshPhongMaterial({ color: 0xffdd66, shininess: 120 });
   textMesh = new THREE.Mesh(geo, mat);
-  textMesh.position.set(0, -150, 0);
   scene.add(textMesh);
 });
 
-// === Animation ===
-function animate(){
-  requestAnimationFrame(animate);
+// === Animation loop: particle spiral -> heart ===
+function animateParticles() {
+  const pos = geometry.attributes.position.array;
+  for (let i = 0; i < particleCount; i++) {
+    // advance progress
+    progress[i] += speed[i];
+    if (progress[i] > 1) progress[i] = 1;
 
-  // update particles
-  const pos = particles.attributes.position.array;
-  for(let i=0;i<particleCount;i++){
-    const target = targets[i];
-    pos[i*3] += (target.x - pos[i*3])*0.02;
-    pos[i*3+1] += (target.y - pos[i*3+1])*0.02;
-    pos[i*3+2] += (target.z - pos[i*3+2])*0.02;
+    // spiral params reduce with progress
+    const p = progress[i];
+    const ang = startAngle[i] + p * 12.0; // spin faster while approaching
+    const r = startRadius[i] * (1 - p) * 0.8;
+
+    // spiral offset (decays as p->1)
+    const sx = r * Math.cos(ang);
+    const sz = r * Math.sin(ang);
+
+    // lerp from start -> target with extra spiral offset
+    const tx = targets[i * 3];
+    const ty = targets[i * 3 + 1];
+    const tz = targets[i * 3 + 2];
+
+    const x = THREE.MathUtils.lerp(startX[i] + sx * 0.6, tx, p);
+    const y = THREE.MathUtils.lerp(startY[i], ty, p);
+    const z = THREE.MathUtils.lerp(startZ[i] + sz * 0.6, tz, p);
+
+    pos[i * 3] = x;
+    pos[i * 3 + 1] = y;
+    pos[i * 3 + 2] = z;
+
+    // optional: change size/alpha by p (requires shader or varying sizes) - skip for simplicity
   }
-  particles.attributes.position.needsUpdate = true;
-
-  // rotate text slowly
-  if(textMesh){
-    textMesh.rotation.y += 0.01;
-  }
-
-  pointCloud.rotation.y += 0.002;
-  renderer.render(scene,camera);
+  geometry.attributes.position.needsUpdate = true;
 }
-animate();
 
-// === Resize ===
-addEventListener('resize',()=>{
-  camera.aspect = innerWidth/innerHeight;
+// === Main loop ===
+function loop() {
+  requestAnimationFrame(loop);
+  animateParticles();
+
+  // rotate whole cloud slowly
+  particles.rotation.y += 0.0025;
+
+  // text rotation & subtle pulse
+  if (textMesh) {
+    textMesh.rotation.y += 0.008;
+    const s = 1 + 0.02 * Math.sin(performance.now() * 0.003);
+    textMesh.scale.set(s, s, s);
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+loop();
+
+// === Resize handler ===
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 });
