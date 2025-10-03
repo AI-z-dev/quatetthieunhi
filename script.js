@@ -40,6 +40,18 @@ const heartMat = new THREE.PointsMaterial({color:0x55aaff, size:1.5});
 const heart = new THREE.Points(heartGeo, heartMat);
 scene.add(heart);
 
+// heartbeat effect
+let scaleDir = 1;
+function heartbeat(){
+  const s = heart.scale.x + scaleDir*0.002;
+  heart.scale.set(s,s,s);
+  if(s>1.05) scaleDir=-1;
+  if(s<0.95) scaleDir=1;
+}
+
+// danh sách animation
+const animateFns = [heartbeat];
+
 // Text "Trung Thu ấm áp"
 const loader = new THREE.FontLoader();
 loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', font=>{
@@ -62,16 +74,6 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
   }
   animateFns.push(animateText);
 });
-
-// heartbeat effect
-let scaleDir = 1;
-function heartbeat(){
-  const s = heart.scale.x + scaleDir*0.002;
-  heart.scale.set(s,s,s);
-  if(s>1.05) scaleDir=-1;
-  if(s<0.95) scaleDir=1;
-}
-const animateFns = [heartbeat];
 
 // loop
 function animate(t){
