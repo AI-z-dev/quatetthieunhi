@@ -2,20 +2,21 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>3D Heart Galaxy</title>
+  <title>Trung Thu Ấm Áp</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Thư viện Three.js -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/FontLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/geometries/TextGeometry.js"></script>
 </head>
 <body>
   <div id="container"></div>
-  <div id="message">Chúc bạn Trần Bình Trung Thu ấm áp nhaa &lt;3</div>
-  
+
   <!-- Nút nhạc -->
-  <button id="music-btn">🎵</button>
-  <audio id="bg-music" loop>
+  <button id="musicBtn">▶️ Nhạc</button>
+  <audio id="bgMusic" loop>
     <source src="v14044g50000d1funuvog65k1rp5r8c0.mp3" type="audio/mpeg">
-  
   </audio>
 
   <script src="script.js"></script>
